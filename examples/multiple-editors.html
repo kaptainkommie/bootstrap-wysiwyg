@@ -16,7 +16,7 @@
 			<hr>
 			<br />
 			<h3>First Editor</h3>
-			<div class="btn-toolbar" data-role="editor-toolbar" data-target="#first-editor">
+			<div class="btn-toolbar" data-role="editor-toolbar1" data-target="#first-editor">
 					<div class="btn-group">
 						<a class="btn btn-default dropdown-toggle" data-toggle="dropdown"
 							title="Font"><i class="fa fa-font"></i><b class="caret"></b>
@@ -101,7 +101,7 @@
 			<br />
 			<h3>Second Editor</h3>
 
-			<div class="btn-toolbar" data-role="editor-toolbar" data-target="#second-editor">
+			<div class="btn-toolbar" data-role="editor-toolbar2" data-target="#second-editor">
 					<div class="btn-group">
 						<a class="btn btn-default dropdown-toggle" data-toggle="dropdown"
 							title="Font"><i class="fa fa-font"></i><b class="caret"></b>
@@ -190,8 +190,8 @@
 		<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
 		<script src="../src/bootstrap-wysiwyg.js"></script>
 		<script type='text/javascript'>
-			$('#first-editor').wysiwyg();
-			$('#second-editor').wysiwyg();
+			$('#first-editor').wysiwyg( {toolbarSelector: '[data-role=editor-toolbar1]'} );
+			$('#second-editor').wysiwyg( {toolbarSelector: '[data-role=editor-toolbar2]'} );
 
 			$(".dropdown-menu > input").click(function (e) {
         		e.stopPropagation();
