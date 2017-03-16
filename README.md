@@ -171,6 +171,7 @@ Thanks to
 @gojko 					@mindmup			@jordanh
 @beatnbite				@brutuscat			@VictorBjelkholm
 @mrmrs 					@tilleryd 			@pnevels
+@kaptainkommie
 
 History
 ------------
