@@ -23,7 +23,7 @@ Features
 * Supports mobile devices (See SUPPORTED)
 * Supports multiple instances
 * HTML Sanitization
-* Drag and drop files to insert images
+* Drag and drop files to insert images (with optional dimension restrictions)
 * Supports image upload
 * Supports image capture on mobile devices
 * Events
@@ -144,6 +144,23 @@ $('#editor').wysiwyg().on('change', function(){
 	alert('something has been changed on the editor');
 });
 ```
+
+Image Size Restrictions and Image Resizing
+-----------------------------------------------
+The ability to resize images (client-side) has been a heavily requested feature and we are working towards implementation. 
+
+Currently, users have the ability to specifiy a maximum size for both the width and height attributes of images added to the editor. Images exceeding the restriction for either dimension will be resized on the fly (maintaining aspect ratio) before being inserted into the editor. The resulting image quality leaves a bit to be desired when going from very large images to very small, or vice versa. This is a limitation of HTML5's Canvas functionality.
+
+This true image resizing (not just simply CSS) allows users to ensure managable image file sizes when uploading editor data to a remote server. If filesize is not an issue, but resized image quality is, the suggestion would be to disable these client-side image restrictions and instead use server-side methods of resizing.
+
+This is done by specifying parameters in the options object that is passsed to the editor upon creation.
+The default options are listed below:
+```
+enableImageSizeRestrictions: true,
+imageMaxWidth: 300,
+imageMaxHeight: 300,
+```
+Full fledged, on-demand, in-editor image resizing is on its way! Stay tuned!
 
 Styling for mobile devices
 --------------------------
