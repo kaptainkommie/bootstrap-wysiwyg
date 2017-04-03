@@ -39,6 +39,9 @@
             selectionColor: "darkgrey",
             dragAndDropImages: true,
             keypressTimeout: 200,
+            enableImageSizeRestrictions: true,
+            imageMaxWidth: 300,
+            imageMaxHeight: 300,
             fileUploadError: function( reason, detail ) { console.log( "File upload error", reason, detail ); }
         };
 
@@ -234,14 +237,97 @@
         }
      };
 
+     // single step canvas resize
+     Wysiwyg.prototype.resizeImageOnce = function( image, width, height) {
+        if ( image ) {
+            var t0 = performance.now();
+            var oc = document.createElement( "canvas" );
+            var octx = oc.getContext( "2d" );
+
+            oc.width = width;
+            oc.height = height;
+            octx.drawImage( image, 0, 0, oc.width, oc.height );
+
+            var t1 = performance.now();
+
+            console.log( "Call to resizeImageOnce took " + (t1 - t0) + " milliseconds." );
+
+            return oc.toDataURL();
+        }
+
+        return null;
+     };
+
+     // 2-step canvas resize
+     Wysiwyg.prototype.resizeImageStepped = function( image, width, height) {
+        if ( image ) {
+            var t0 = performance.now();
+            var oc = document.createElement( "canvas" );
+            var octx = oc.getContext( "2d" );
+            var fc = document.createElement( "canvas" );
+            var fctx = fc.getContext( "2d" );
+
+            fc.width = width;
+            fc.height = height;
+
+            oc.width = image.width * 0.5;
+            oc.height = image.height * 0.5;
+            octx.drawImage( image, 0, 0, oc.width, oc.height );
+
+            // step 2
+            octx.drawImage( oc, 0, 0, oc.width * 0.5, oc.height * 0.5 );
+
+            // copy to final canvas
+            fctx.drawImage( oc, 0, 0, oc.width * 0.5, oc.height * 0.5, 0, 0, fc.width, fc.height );
+
+            var t1 = performance.now();
+
+            console.log( "Call to resizeImageStepped took " + (t1 - t0) + " milliseconds." );
+
+            return fc.toDataURL();
+        }
+
+        return null;
+     };
+
+     // calculate and maintain aspect ratio
+     Wysiwyg.prototype.calculateAspectRatioFit = function( srcWidth, srcHeight, maxWidth, maxHeight ) {
+        var ratio = Math.min( maxWidth / srcWidth, maxHeight / srcHeight );
+
+        return { width: srcWidth * ratio, height: srcHeight * ratio };
+     };
+
      Wysiwyg.prototype.insertFiles = function( files, options, editor, toolbarBtnSelector ) {
         var self = this;
         editor.focus();
         $.each( files, function( idx, fileInfo ) {
             if ( /^image\//.test( fileInfo.type ) ) {
                 $.when( self.readFileIntoDataUrl( fileInfo ) ).done( function( dataUrl ) {
-                    self.execCommand( "insertimage", dataUrl, editor, options, toolbarBtnSelector );
-                    editor.trigger( "image-inserted" );
+                    // are image size restrictions in place?
+                    if ( options.enableImageSizeRestrictions ) {                      
+                        var img = new Image();
+
+                        img.onload = function() {
+                            // is this image larger than restrictions?
+                            if ( ( options.imageMaxWidth > 0 && img.width > options.imageMaxWidth ) || ( options.imageMaxHeight > 0 && img.height > options.imageMaxHeight ) ) {
+                                var newDimensions = self.calculateAspectRatioFit( img.width, img.height, options.imageMaxWidth, options.imageMaxHeight );
+
+                                var resized = self.resizeImageOnce( img, newDimensions.width, newDimensions.height );
+
+                                if ( resized ) {
+                                    dataUrl = resized;
+                                }                        
+                            }
+
+                            self.execCommand( "insertimage", dataUrl, editor, options, toolbarBtnSelector );
+                            editor.trigger( "image-inserted" );                            
+                        };
+                        img.src = dataUrl;
+                    }
+                    else { // insert untouched image immediately
+                        self.execCommand( "insertimage", dataUrl, editor, options, toolbarBtnSelector );
+                        editor.trigger( "image-inserted" );
+                    }                    
                 } ).fail( function( e ) {
                     options.fileUploadError( "file-reader", e );
                 } );
