@@ -124,12 +124,12 @@
                 var command = commandArr[ 0 ];
 
                 // If the command has an argument and its value matches this button. == used for string/number comparison
-                if ( commandArr.length > 1 && document.queryCommandEnabled( command ) && document.queryCommandValue( command ) === commandArr[ 1 ] ) {
+                if ( commandArr.length > 1 && document.queryCommandSupported( command ) && document.queryCommandEnabled( command ) && document.queryCommandValue( command ) === commandArr[ 1 ] ) {
                     self.addClass( options.activeToolbarClass );
                 }
 
                 // Else if the command has no arguments and it is active
-                else if ( commandArr.length === 1 && document.queryCommandEnabled( command ) && document.queryCommandState( command ) ) {
+                else if ( commandArr.length === 1 && document.queryCommandSupported( command ) && document.queryCommandEnabled( command ) && document.queryCommandState( command ) ) {
                     self.addClass( options.activeToolbarClass );
                 }
 
@@ -148,10 +148,13 @@
 
         var parts = commandWithArgs.split( "-" );
 
-        if ( parts.length === 1 ) {
+        if ( parts.length === 1 && document.queryCommandSupported( command ) ) {
             document.execCommand( command, false, args );
         } else if ( parts[ 0 ] === "format" && parts.length === 2 ) {
             document.execCommand( "formatBlock", false, parts[ 1 ] );
+        } else if ( parts.length === 1 && command === 'insertHTML' ) {
+            //Custom insertHTML for IE
+            this.insertHTML( args, editor );
         }
 
         ( editor ).trigger( "change" );
@@ -236,6 +239,27 @@
             $( editor ).focus();
         }
      };
+
+     Wysiwyg.prototype.insertFontPoint = function ( value, editor, options, toolbarBtnSelector ) {
+        var self = this;
+        editor.focus();
+
+        self.execCommand( 'fontSize 7', null, editor, options, toolbarBtnSelector );
+        editor.find( 'font[size="7"]' ).removeAttr( 'size' ).css( 'font-size', value + 'pt' );
+    };
+
+    Wysiwyg.prototype.insertHTML = function ( html, editor ) {
+        editor.focus();
+
+        var el = document.createElement( "div" );
+        el.innerHTML = html;
+        var frag = document.createDocumentFragment(), node;
+        while ( ( node = el.firstChild ) ) {
+            frag.appendChild( node );
+        }
+
+        this.selectedRange.insertNode( frag );
+    };
 
      // single step canvas resize
      Wysiwyg.prototype.resizeImageOnce = function( image, width, height) {
@@ -352,8 +376,14 @@
             self.restoreSelection(  );
             editor.focus();
 
-            if ( editor.data( options.commandRole ) === "html" ) {
+            if ( $( this ).data( options.commandRole ) === "html" ) {
                 self.toggleHtmlEdit( editor );
+            } else if ( $( this ).data( options.commandRole ).indexOf( 'fontPoint' ) >= 0 ) {
+                var commandArr = $( this ).data( options.commandRole ).split( ' ' );
+                commandArr.shift();
+                var args = commandArr.join( ' ' ) + ( '' );
+
+                self.insertFontPoint( args, editor, options, toolbarBtnSelector );
             } else {
                 self.execCommand( $( this ).data( options.commandRole ), null, editor, options, toolbarBtnSelector );
             }
