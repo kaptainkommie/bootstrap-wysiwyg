@@ -361,13 +361,12 @@
         } );
      };
 
-     Wysiwyg.prototype.markSelection = function( input, color, options ) {
+     Wysiwyg.prototype.markSelection = function( color, options ) {
         this.restoreSelection(  );
         if ( document.queryCommandSupported( "hiliteColor" ) ) {
             document.execCommand( "hiliteColor", false, color || "transparent" );
         }
         this.saveSelection(  );
-        input.data( options.selectionMarker, color );
      };
 
      Wysiwyg.prototype.bindToolbar = function( editor, toolbar, options, toolbarBtnSelector ) {
@@ -398,7 +397,9 @@
             self.saveSelection(  );
         } );
 
-        toolbar.find( "[data-toggle=dropdown]" ).click( this.restoreSelection(  ) );
+        toolbar.find( "[data-toggle=dropdown]" ).click( self.markSelection( options.selectionColor, options ) );
+
+        toolbar.on( "hide.bs.dropdown", self.markSelection( false, options ));
 
         toolbar.find( "input[type=text][data-" + options.commandRole + "]" ).on( "webkitspeechchange change", function() {
             var newValue = this.value;  // Ugly but prevents fake double-calls due to selection restoration
@@ -409,17 +410,8 @@
                 self.execCommand( $( this ).data( options.commandRole ), newValue, editor, options, toolbarBtnSelector );
             }
             self.saveSelection(  );
-        } ).on( "focus", function() {
-            var input = $( this );
-            if ( !input.data( options.selectionMarker ) ) {
-                self.markSelection( input, options.selectionColor, options );
-                input.focus();
-            }
         } ).on( "blur", function() {
-            var input = $( this );
-            if ( input.data( options.selectionMarker ) ) {
-                self.markSelection( input, false, options );
-            }
+            self.markSelection( false, options );
         } );
         toolbar.find( "input[type=file][data-" + options.commandRole + "]" ).change( function() {
             self.restoreSelection(  );
